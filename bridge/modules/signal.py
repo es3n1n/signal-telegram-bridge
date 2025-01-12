@@ -16,6 +16,7 @@ from signalbot import Command, Context
 from bridge.accounts import signal as bot
 from bridge.accounts import telegram
 from bridge.core.config import settings
+from bridge.util.string import add_quote
 
 
 AnyInputFile: TypeAlias = InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo
@@ -77,6 +78,12 @@ def _map_entities(prefix_length: int, data_message: dict) -> list[MessageEntity]
 
 async def forward_message(chat_id: int, data_message: dict, context: Context) -> Any:
     prefix: str = f'{_name(context)}: '
+
+    quote: dict | None = data_message.get('quote')
+    if quote:
+        quote_text: str = quote.get('text') or f'Message with {len(quote["attachments"])} attachments'
+        prefix += f'\n{add_quote(quote_text)}\n'
+
     text: str = f'{prefix}{data_message.get("message", "") or ""}'.strip()
     entities = _map_entities(len(prefix), data_message)
 

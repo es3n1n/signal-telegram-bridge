@@ -8,9 +8,22 @@ from loguru import logger
 from bridge.accounts import signal
 from bridge.accounts import telegram as bot
 from bridge.core.config import settings
+from bridge.util.string import add_quote
 
 
 dp = Dispatcher()
+media_types = {
+    # No need for animation, it will be presented as a document anyways
+    'audio': lambda m: (_get_file_name('audio', m.audio.file_name, m.audio.mime_type, '.mp3'), m.audio.file_id),
+    'document': lambda m: (
+        _get_file_name('document', m.document.file_name, m.document.mime_type, '.bin'),
+        m.document.file_id,
+    ),
+    'sticker': lambda m: ('sticker.webp', m.sticker.file_id),
+    'video': lambda m: (_get_file_name('video', m.video.file_name, m.video.mime_type, '.mp4'), m.video.file_id),
+    'video_note': lambda m: ('video_message.mp4', m.video_note.file_id),
+    'voice': lambda m: ('audio_message.ogg', m.voice.file_id),
+}
 
 
 def b64(data: bytes) -> str:
@@ -79,23 +92,24 @@ def _get_file_name(prefix: str, file_name: str | None, mime_type: str | None, fa
     return f'{prefix}{ext}'
 
 
+def _get_message_preview(message: types.Message) -> str:
+    message_preview: str = message.text or message.caption or ''
+
+    # If there's media without any caption, show the media name
+    if not message_preview:
+        for k in media_types:
+            if not getattr(message, k, None):
+                continue
+
+            return k.replace('_', '').capitalize()
+
+    return message_preview or 'unknown'
+
+
 async def _extract_message(message: types.Message) -> tuple[list[str], str, str]:
     prefix = 'Unknown'
     if message.from_user:
         prefix = message.from_user.full_name
-
-    media_types = {
-        # No need for animation, it will be presented as a document anyways
-        'audio': lambda m: (_get_file_name('audio', m.audio.file_name, m.audio.mime_type, '.mp3'), m.audio.file_id),
-        'document': lambda m: (
-            _get_file_name('document', m.document.file_name, m.document.mime_type, '.bin'),
-            m.document.file_id,
-        ),
-        'sticker': lambda m: ('sticker.webp', m.sticker.file_id),
-        'video': lambda m: (_get_file_name('video', m.video.file_name, m.video.mime_type, '.mp4'), m.video.file_id),
-        'video_note': lambda m: ('video_message.mp4', m.video_note.file_id),
-        'voice': lambda m: ('audio_message.ogg', m.voice.file_id),
-    }
 
     attachments = []
     for media_type, get_file_info in media_types.items():
@@ -118,6 +132,11 @@ async def _extract_message(message: types.Message) -> tuple[list[str], str, str]
     if message.sticker and (message.sticker.is_animated or message.sticker.is_video):
         attachments.clear()
         text = f'Animated sticker {message.sticker.emoji or ""}'.strip()
+
+    # Show replies
+    if message.reply_to_message:
+        message_preview = _get_message_preview(message.reply_to_message)
+        text = f'\n{add_quote(message_preview)}\n{text}'
 
     return attachments, prefix, text
 
