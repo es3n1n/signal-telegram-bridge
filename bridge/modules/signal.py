@@ -145,9 +145,13 @@ class Listener(Command):
 
         # Setup chat
         telegram_chat: int = settings.TELEGRAM_CHATS[index]
-
-        # Forward a sticker if there is one
         data_message: dict = raw_msg.get('dataMessage', {})
+
+        # Skip reactions
+        if 'reaction' in data_message:
+            return None
+
+        # Special treatment of stickers
         if 'sticker' in data_message:
             return await forward_sticker(telegram_chat, data_message, context)
 
