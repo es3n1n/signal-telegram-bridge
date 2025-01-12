@@ -3,18 +3,18 @@ from base64 import b64decode
 from typing import Any, TypeAlias, cast
 
 from aiogram.types import (
+    BufferedInputFile,
     InputMediaAudio,
     InputMediaDocument,
     InputMediaPhoto,
     InputMediaVideo,
     MessageEntity,
 )
-from aiogram.types.input_file import BufferedInputFile
 from loguru import logger
 from signalbot import Command, Context
 
+from bridge.accounts import bot_for_signal_user, telegram
 from bridge.accounts import signal as bot
-from bridge.accounts import telegram
 from bridge.core.config import settings
 from bridge.util.string import add_quote
 
@@ -76,8 +76,33 @@ def _map_entities(prefix_length: int, data_message: dict) -> list[MessageEntity]
     return entities
 
 
+async def handle_commands(data_message: dict, context: Context) -> bool:
+    message_text: str = data_message.get('message', '')
+    if not message_text:
+        return False
+
+    if message_text == '/id':
+        text: str = f'your id: {context.message.source_uuid}'
+        if 'quote' in data_message:
+            text += f'\nquoted user id: {data_message["quote"]["authorUuid"]}'
+
+        await bot.send(receiver=context.message.group, text=text)
+        return True
+
+    return False
+
+
 async def forward_message(chat_id: int, data_message: dict, context: Context) -> Any:
+    # No need to forward that
+    if await handle_commands(data_message, context):
+        return None
+
+    pers = bot_for_signal_user(context.message.source_uuid)
     prefix: str = f'{_name(context)}: '
+
+    # No need for prefixes for personalized bots
+    if pers.is_personalized:
+        prefix = ''
 
     quote: dict | None = data_message.get('quote')
     if quote:
@@ -123,10 +148,10 @@ async def forward_message(chat_id: int, data_message: dict, context: Context) ->
             )
 
         logger.info(f'Forwarding message with {len(media)} media TG:{chat_id} from SIGNAL:{context.message.group}')
-        return await telegram.send_media_group(chat_id, media)
+        return await pers.bot.send_media_group(chat_id, media)
 
     logger.info(f'Forwarding a text message to TG:{chat_id} from SIGNAL:{context.message.group}')
-    return await telegram.send_message(chat_id, text=text, entities=entities)
+    return await pers.bot.send_message(chat_id, text=text, entities=entities)
 
 
 class Listener(Command):
