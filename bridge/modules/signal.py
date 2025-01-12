@@ -27,6 +27,7 @@ def _name(context: Context) -> str:
 
 
 async def forward_sticker(chat_id: int, data_message: dict, context: Context) -> Any:
+    pers = bot_for_signal_user(context.message.source_uuid)
     sticker_data: dict | None = data_message.get('sticker')
     if not sticker_data:
         logger.error('No sticker data!')
@@ -34,11 +35,12 @@ async def forward_sticker(chat_id: int, data_message: dict, context: Context) ->
 
     sticker_file_path = settings.SIGNAL_CLI_PATH / 'stickers' / sticker_data['packId'] / str(sticker_data['stickerId'])
     if not sticker_file_path.exists():
-        return await telegram.send_message(chat_id, text=f'{_name(context)} Sent a sticker, but we can not forward it')
+        return await pers.bot.send_message(chat_id, text=f'{_name(context)} Sent a sticker, but we can not forward it')
 
     logger.info(f'Forwarding a sticker to TG:{chat_id} from SIGNAL:{context.message.group}')
-    await telegram.send_message(chat_id, text=f'{_name(context)}:')
-    return await telegram.send_sticker(
+    if not pers.is_personalized:
+        await telegram.send_message(chat_id, text=f'{_name(context)}:')
+    return await pers.bot.send_sticker(
         chat_id,
         sticker=BufferedInputFile(
             file=sticker_file_path.read_bytes(),
