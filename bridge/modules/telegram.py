@@ -68,19 +68,31 @@ def _handle_special_text(message: types.Message) -> str | None:  # noqa: PLR0911
     return None
 
 
+def _get_file_name(prefix: str, file_name: str | None, mime_type: str | None, fallback_ext: str) -> str:
+    if file_name:
+        return file_name
+
+    ext: str | None = mimetypes.guess_extension(mime_type) if mime_type else None
+    if not ext:
+        return f'{prefix}{fallback_ext}'
+
+    return f'{prefix}{ext}'
+
+
 async def _extract_message(message: types.Message) -> tuple[list[str], str, str]:
     prefix = 'Unknown'
     if message.from_user:
         prefix = message.from_user.full_name
 
     media_types = {
-        'audio': lambda m: (m.audio.file_name or 'audio.mp3', m.audio.file_id),
+        # No need for animation, it will be presented as a document anyways
+        'audio': lambda m: (_get_file_name('audio', m.audio.file_name, m.audio.mime_type, '.mp3'), m.audio.file_id),
         'document': lambda m: (
-            m.document.file_name or (message.animation.file_name if message.animation else None) or 'document.bin',
+            _get_file_name('document', m.document.file_name, m.document.mime_type, '.bin'),
             m.document.file_id,
         ),
         'sticker': lambda m: ('sticker.webp', m.sticker.file_id),
-        'video': lambda m: (m.video.file_name or 'video.mp4', m.video.file_id),
+        'video': lambda m: (_get_file_name('video', m.video.file_name, m.video.mime_type, '.mp4'), m.video.file_id),
         'video_note': lambda m: ('video_message.mp4', m.video_note.file_id),
         'voice': lambda m: ('audio_message.ogg', m.voice.file_id),
     }
