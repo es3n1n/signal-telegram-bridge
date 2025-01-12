@@ -97,7 +97,7 @@ def _get_message_preview(message: types.Message) -> str:
 
     # If there's media without any caption, show the media name
     if not message_preview:
-        for k in media_types:
+        for k in (*list(media_types.keys()), 'photo'):
             if not getattr(message, k, None):
                 continue
 
