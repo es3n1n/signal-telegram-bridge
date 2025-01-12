@@ -75,7 +75,10 @@ async def _extract_message(message: types.Message) -> tuple[list[str], str, str]
 
     media_types = {
         'audio': lambda m: (m.audio.file_name or 'audio.mp3', m.audio.file_id),
-        'document': lambda m: (m.document.file_name or 'document.bin', m.document.file_id),
+        'document': lambda m: (
+            m.document.file_name or (message.animation.file_name if message.animation else None) or 'document.bin',
+            m.document.file_id,
+        ),
         'sticker': lambda m: ('sticker.webp', m.sticker.file_id),
         'video': lambda m: (m.video.file_name or 'video.mp4', m.video.file_id),
         'video_note': lambda m: ('video_message.mp4', m.video_note.file_id),
