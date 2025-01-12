@@ -114,6 +114,11 @@ async def _extract_message(message: types.Message) -> tuple[list[str], str, str]
     if special_text := _handle_special_text(message):
         text = special_text
 
+    # Shaking my head
+    if message.sticker and (message.sticker.is_animated or message.sticker.is_video):
+        attachments.clear()
+        text = f'Animated sticker {message.sticker.emoji or ""}'.strip()
+
     return attachments, prefix, text
 
 
