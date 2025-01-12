@@ -1,0 +1,11 @@
+version: "3"
+services:
+  signal-cli-rest-api:
+    image: bbernhard/signal-cli-rest-api:latest
+    environment:
+#      - MODE=normal
+       - MODE=json-rpc
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./.data/signal-cli:/home/.local/share/signal-cli"

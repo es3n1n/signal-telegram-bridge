@@ -1,0 +1,57 @@
+[tool.poetry]
+name = "bridge"
+version = "0.1.0"
+description = ""
+authors = ["Arsenii es3n1n <me@es3n.in>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+loguru = "^0.7.3"
+signalbot = {git = "https://github.com/filipre/signalbot.git", rev = "7b10bb721d2f3ae68eac93678088126f6dbcef15"}
+pydantic-settings = "^2.7.1"
+aiogram = "^3.17.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.9.1"
+mypy = "^1.14.1"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    # Conflicting stuff
+    "D211", "D212", "D203", "COM812", "ISC001",
+    # We need a new line at the end of file
+    "W391",
+    # No docs
+    "D100", "D101", "D102", "D103", "D104", "D107", "D419",
+    # I will fix all the fixmes and todos one day, please don't remind me about them
+    "FIX001", "FIX002",
+    # No issue links yet
+    "TD003",
+    # Any
+    "ANN401",
+    # Signal name
+    "A005",
+]
+flake8-quotes.inline-quotes = "single"
+
+[tool.ruff.format]
+quote-style = "single"
+line-ending = "lf"
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+combine-as-imports = false
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[[tool.mypy.overrides]]
+module = "signalbot.*"
+ignore_missing_imports = true
