@@ -74,10 +74,10 @@ async def _extract_message(message: types.Message) -> tuple[list[str], str, str]
         prefix = message.from_user.full_name
 
     media_types = {
-        'audio': lambda m: (m.audio.file_name, m.audio.file_id),
-        'document': lambda m: (m.document.file_name, m.document.file_id),
+        'audio': lambda m: (m.audio.file_name or 'audio.mp3', m.audio.file_id),
+        'document': lambda m: (m.document.file_name or 'document.bin', m.document.file_id),
         'sticker': lambda m: ('sticker.webp', m.sticker.file_id),
-        'video': lambda m: (m.video.file_name, m.video.file_id),
+        'video': lambda m: (m.video.file_name or 'video.mp4', m.video.file_id),
         'video_note': lambda m: ('video_message.mp4', m.video_note.file_id),
         'voice': lambda m: ('audio_message.ogg', m.voice.file_id),
     }
