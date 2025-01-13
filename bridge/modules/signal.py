@@ -117,6 +117,7 @@ async def forward_message(chat_id: int, data_message: dict, context: Context) ->
         started_at = len(prefix)
         prefix += add_quote(quote_text)
         prefix = prefix.strip()
+        prefix += '\n'
         end_at = len(prefix)
 
         entities.append(
